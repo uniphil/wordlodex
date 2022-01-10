@@ -25,7 +25,11 @@
         v-on:show-about="showAbout = true"
       />
     </div>
-    <p v-if="loser">The word was <strong class="the-word">{{ word }}</strong>.</p>
+    <p v-if="state === 'end'">
+      <span v-if="loser">The word was <strong class="the-word">{{ word }}</strong>.</span>
+      <span v-else>Nice work!</span>
+      <a href="#" @click.prevent="resetGame">Play another?</a>
+    </p>
     <div
       class="tiles-sizer"
       :style="{ aspectRatio: `${tiles[0].length} / ${tiles.length}` }">
