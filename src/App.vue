@@ -1,0 +1,316 @@
+<template>
+  <div id="app">
+    <div id="messages">
+      <div
+        v-for="m in messages"
+        :key="m.k"
+        class="message">
+        {{ m.message }}
+      </div>
+    </div>
+    <div class="controls-sizer">
+      <Controls
+        :state="state"
+        :size="size"
+        :min-size="minSize"
+        :max-size="maxSize"
+        v-on:change-size="size += $event"
+        v-on:reset="resetGame"
+      />
+    </div>
+    <p v-if="loser">The word was <strong>{{ word }}</strong>.</p>
+    <div class="tiles-sizer">
+      <Tiles :tiles="tiles" />
+    </div>
+    <div class="keyboard-sizer">
+      <Keyboard
+        :losts="losts"
+        :founds="founds"
+        :nopes="nopes"
+        v-on:letter-press="handleLetterPress"
+        v-on:backspace-press="handleBackspacePress"
+        v-on:escape-press="endGame"
+        v-on:enter-press="handleEnterPress"
+      />
+    </div>
+  </div>
+</template>
+
+<script>
+import Controls from './components/Controls';
+import Keyboard from './components/Keyboard';
+import Tiles from './components/Tiles';
+
+export default {
+  name: 'App',
+  components: {
+    Controls,
+    Keyboard,
+    Tiles,
+  },
+  data: () => ({
+    // game setup
+    size: 5,
+    minSize: 1,
+    maxSize: 12,
+
+    // data loading
+    wordlists: [],
+
+    // general notifications
+    messages: [],
+
+    // game state
+    state: 'welcome',
+    word: null,
+    entry: '',
+    guesses: [],
+  }),
+  computed: {
+    tiles() {
+      const guessTiles = this.guesses
+        .map(g => Array.from(g)
+          .map((letter, i) => ({
+            type: 'guess',
+            letter,
+            outcome: letter === this.word[i]
+              ? 'found'
+              : Array.from(this.word).includes(letter) // TODO: double letter handling
+                ? 'lost'
+                : 'nope',
+          })));
+      if (guessTiles.length === this.size) {
+        return guessTiles;
+      }
+      return guessTiles
+        .concat([Array.from({length: this.size})
+          .map((_, i) => ({type: 'entry', letter: this.entry[i]}))])
+        .concat(Array.from({length: this.size - this.guesses.length - 1})
+          .map(_ => Array.from({length: this.size})
+            .map(_ => ({type: 'empty'}))));
+    },
+    founds() {
+      if (this.guesses.length < 1) return [];
+      const byGuess = this.guesses
+        .map(guess => Array.from(guess)
+          .filter((letter, i) => letter === this.word[i]));
+      return [].concat.apply(...byGuess);
+    },
+    losts() {
+      if (this.guesses.length < 1) return [];
+      const wordLetters = Array.from(this.word);
+      return Array.from(this.guesses.join(''))
+        .filter(l => wordLetters.includes(l) && !this.founds.includes(l));
+    },
+    nopes() {
+      if (this.guesses.length < 1) return [];
+      const wordLetters = Array.from(this.word);
+      return Array.from(this.guesses.join(''))
+        .filter(l => !wordLetters.includes(l));
+    },
+    loser() {
+      if (this.state === 'end' && !this.guesses.includes(this.word)) {
+        return true;
+      } else {
+        return false;
+      }
+    },
+  },
+  methods: {
+    handleLetterPress(key) {
+      if (this.state === 'welcome') {
+        this.startGame();
+      } else if (this.state === 'end') {
+        return;
+      }
+      if (this.entry.length < this.size) {
+        this.entry += key;
+      }
+    },
+    handleBackspacePress() {
+      this.entry = this.entry.slice(0, -1);
+      if (this.entry === '' && this.guesses.length === 0) {
+        this.resetGame();
+      }
+    },
+    handleEnterPress() {
+      if (this.state !== 'playing') {
+        return;
+      }
+      if (this.entry.length === this.size) {
+        if (!this.wordlists[this.size].includes(this.entry)) {
+          this.notify('Word not found :/');
+          return;
+        }
+
+        const guess = this.entry;
+        this.guesses.push(guess);
+        if (guess === this.word) {
+          this.endGame(true);
+        } else if (this.guesses.length === this.size) {
+          this.endGame(false);
+        }
+        this.entry = '';
+      }
+    },
+    notify(message) {
+      this.messages.unshift({ message, k: '' + Math.random() });
+      setTimeout(() => this.messages.pop(), 2000);
+    },
+    async startGame() {
+      this.state = 'playing';
+
+      const size = this.size;
+      const loadState = this.wordlists[size];
+
+      if (loadState === undefined) {
+        this.wordlists[size] = 'loading';
+        await this.loadWordsforGame(size);
+      } else if (loadState === 'loading') {
+        return;
+      } else if (loadState === 'errored') {
+        console.error('ohnooooooo');
+      }
+
+      if (this.word !== null) { return; }
+
+      // we had an async break, check we're still working at the same game size
+      if (size === this.size) {
+        const list = this.wordlists[size];
+        this.word = list[Math.floor(Math.random() * list.length)];
+      }
+    },
+    resetGame() {
+      this.state = 'welcome';
+      this.word = null;
+      this.entry = '';
+      this.guesses = [];
+    },
+    endGame(winner) {
+      if (this.state !== 'playing') {
+        return;
+      }
+      if (winner) {
+        this.notify('You won!');
+      }
+      this.state = 'end';
+    },
+    async loadWordsforGame(size) {
+      const fileNumber = ('' + size).padStart(2, '0');
+      try {
+        const res = await fetch(`static/words-${fileNumber}.txt`);
+        const rawWords = await res.text();
+        const words = rawWords.split('\n').filter(w => w.length === size);
+        if (words.length === 0) {
+          console.error('words loaded, but none filtered. raw:', rawWords);
+        }
+        this.wordlists[size] = words;
+      } catch (e) {
+        this.wordlists[size] = 'errored';
+      }
+    },
+  },
+};
+</script>
+
+<style>
+:root {
+  --bg: #333;
+  --fg: #ccc;
+  --outline: hsla(0, 0%, 33%, 0.5);
+  --outline-fg: hsla(0, 0%, 60%, 0.5);
+  --okay: #c93;
+  --good: #496;
+  --tile-entry: #111;
+  --tile-nope: var(--outline);
+  --tile-lost: var(--okay);
+  --tile-found: var(--good);
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+#app {
+  align-items: center;
+  background: #222;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  height: 100%;
+  justify-content: space-between;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+#messages {
+  position: absolute;
+  top: 2em;
+}
+#messages .message {
+  background: hsla(0, 0%, 0%, 0.5);
+  border-radius: 0.5em;
+  padding: 0.25em 0.5em;
+  margin: 0.5em;
+}
+.controls-sizer {
+  background: linear-gradient(hsla(200, 50%, 50%, 0.2), hsla(210, 50%, 50%, 0.1));
+  flex-grow: 0;
+  width: 100%;
+}
+.tiles-sizer {
+  align-items: center;
+  aspect-ratio: 1 / 1;
+  display: flex;
+  flex: 1 1 auto;
+  max-width: 100%;
+}
+.keyboard-sizer {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+button {
+  --bg-top: #555;
+  --bg-bottom: hsla(0, 0%, 33.3%, 0.25);
+  background: linear-gradient(var(--bg-top) 10%, var(--bg-bottom) 140%);
+  border: 2px solid var(--outline);
+  border-top-width: 1px;
+  border-radius: 0.5em;
+  box-sizing: border-box;
+  color: var(--fg);
+  font: inherit;
+  font-weight: bold;
+  padding: 0.15em 0.4em;
+  text-align: center;
+  text-shadow: 1px 1px 0 hsla(0, 0%, 0%, 0.5);
+  text-transform: uppercase;
+}
+button:hover {
+  --bg-bottom: hsla(0, 0%, 33.3%, 0.667);
+  --outline: #888;
+}
+button:active {
+  --bg-bottom: hsla(0, 0%, 66.7%, 0.333);
+  --outline: #666;
+}
+button:disabled,
+button:disabled:hover,
+button:disabled:active {
+  --bg-top: var(--bg-bottom);
+  --bg-bottom: hsla(0, 0%, 33.3%, 0.25);
+  --outline: hsla(0, 0%, 33%, 0.5);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+</style>
