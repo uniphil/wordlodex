@@ -294,6 +294,7 @@ button {
   text-align: center;
   text-shadow: 1px 1px 0 hsla(0, 0%, 0%, 0.5);
   text-transform: uppercase;
+  touch-action: manipulation; /* try to prevent page zoom on double-button-tap */
 }
 button:hover {
   --bg-bottom: hsla(0, 0%, 33.3%, 0.667);

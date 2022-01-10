@@ -5,20 +5,20 @@
       Game:
       <button
         v-if="state === 'welcome'"
-        @click="$emit('change-size', -1)"
+        @click.prevent="$emit('change-size', -1)"
         :disabled="size <= minSize">
         -
       </button>
       {{ size }}x{{ size }}
       <button
         v-if="state === 'welcome'"
-        @click="$emit('change-size', 1)"
+        @click.prevent="$emit('change-size', 1)"
         :disabled="size >= maxSize">
         +
       </button>
       <button
         v-if="state !== 'welcome'"
-        @click="$emit('reset')"
+        @click.prevent="$emit('reset')"
         title="reset game">
         ↺
       </button>

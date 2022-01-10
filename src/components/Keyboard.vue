@@ -9,7 +9,7 @@
           found: founds.includes(letter),
           nope: nopes.includes(letter),
         }"
-        @click="$emit('letter-press', letter)"
+        @click.prevent="$emit('letter-press', letter)"
         v-for="letter in 'qwertyuiop'">
         {{ letter }}
       </button>
@@ -23,7 +23,7 @@
           found: founds.includes(letter),
           nope: nopes.includes(letter),
         }"
-        @click="$emit('letter-press', letter)"
+        @click.prevent="$emit('letter-press', letter)"
         v-for="letter in 'asdfghjkl'">
         {{ letter }}
       </button>
@@ -31,7 +31,7 @@
     <div class="row">
       <button
         class="key command"
-        @click="$emit('enter-press')">
+        @click.prevent="$emit('enter-press')">
         enter
       </button>
       <button
@@ -42,13 +42,13 @@
           found: founds.includes(letter),
           nope: nopes.includes(letter),
         }"
-        @click="$emit('letter-press', letter)"
+        @click.prevent="$emit('letter-press', letter)"
         v-for="letter in 'zxcvbnm'">
         {{ letter }}
       </button>
       <button
         class="key command"
-        @click="$emit('backspace-press')">
+        @click.prevent="$emit('backspace-press')">
         del
       </button>
     </div>
