@@ -18,8 +18,10 @@
         v-on:reset="resetGame"
       />
     </div>
-    <p v-if="loser">The word was <strong>{{ word }}</strong>.</p>
-    <div class="tiles-sizer">
+    <p v-if="loser">The word was <strong class="the-word">{{ word }}</strong>.</p>
+    <div
+      class="tiles-sizer"
+      :style="{ aspectRatio: `${tiles[0].length} / ${tiles.length}` }">
       <Tiles :tiles="tiles" />
     </div>
     <div class="keyboard-sizer">
@@ -43,19 +45,19 @@ import Tiles from './components/Tiles';
 
 const wordSets = [
   null, // nothing for length zero
-  {file: 'gwords-01.txt', selection: 3},
-  {file: 'gwords-02.txt', selection: 120},
-  {file: 'gwords-03.txt', selection: 600},
-  {file: 'gwords-04.txt', selection: 2222},
-  {file: 'gwords-05.txt', selection: 3000},
-  {file: 'gwords-06.txt', selection: 4000},
-  {file: 'gwords-07.txt', selection: 6000},
-  {file: 'gwords-08.txt', selection: 8400},
-  {file: 'gwords-09.txt', selection: 4000},
-  {file: 'gwords-10.txt', selection: 3600},
-  {file: 'gwords-11.txt', selection: 2400},
-  {file: 'gwords-12.txt', selection: 1200},
-  {file: 'gwords-13.txt', selection: 820},
+  {file: 'gwords-01.txt', selection: 3, guesses: 2},
+  {file: 'gwords-02.txt', selection: 80, guesses: 4},
+  {file: 'gwords-03.txt', selection: 600, guesses: 4},
+  {file: 'gwords-04.txt', selection: 2222, guesses: 5},
+  {file: 'gwords-05.txt', selection: 3000, guesses: 5},
+  {file: 'gwords-06.txt', selection: 4000, guesses: 6},
+  {file: 'gwords-07.txt', selection: 6000, guesses: 7},
+  {file: 'gwords-08.txt', selection: 8400, guesses: 8},
+  {file: 'gwords-09.txt', selection: 4000, guesses: 9},
+  {file: 'gwords-10.txt', selection: 3600, guesses: 10},
+  {file: 'gwords-11.txt', selection: 2400, guesses: 11},
+  {file: 'gwords-12.txt', selection: 1200, guesses: 12},
+  {file: 'gwords-13.txt', selection: 820, guesses: 13},
 ];
 
 export default {
@@ -84,6 +86,9 @@ export default {
     guesses: [],
   }),
   computed: {
+    rows() {
+      return wordSets[this.size].guesses;
+    },
     tiles() {
       const guessTiles = this.guesses
         .map(g => Array.from(g)
@@ -96,13 +101,13 @@ export default {
                 ? 'lost'
                 : 'nope',
           })));
-      if (guessTiles.length === this.size) {
+      if (guessTiles.length === this.rows) {
         return guessTiles;
       }
       return guessTiles
         .concat([Array.from({length: this.size})
           .map((_, i) => ({type: 'entry', letter: this.entry[i]}))])
-        .concat(Array.from({length: this.size - this.guesses.length - 1})
+        .concat(Array.from({length: this.rows - this.guesses.length - 1})
           .map(_ => Array.from({length: this.size})
             .map(_ => ({type: 'empty'}))));
     },
@@ -164,7 +169,7 @@ export default {
         this.guesses.push(guess);
         if (guess === this.word) {
           this.endGame(true);
-        } else if (this.guesses.length === this.size) {
+        } else if (this.guesses.length === this.rows) {
           this.endGame(false);
         }
         this.entry = '';
@@ -301,6 +306,9 @@ body {
 .keyboard-sizer {
   flex: 0 0 auto;
   width: 100%;
+}
+.the-word {
+  text-transform: uppercase;
 }
 
 button {
