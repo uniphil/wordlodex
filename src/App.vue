@@ -41,6 +41,23 @@ import Controls from './components/Controls';
 import Keyboard from './components/Keyboard';
 import Tiles from './components/Tiles';
 
+const wordSets = [
+  null, // nothing for length zero
+  {file: 'gwords-01.txt', selection: 3},
+  {file: 'gwords-02.txt', selection: 120},
+  {file: 'gwords-03.txt', selection: 600},
+  {file: 'gwords-04.txt', selection: 2222},
+  {file: 'gwords-05.txt', selection: 3000},
+  {file: 'gwords-06.txt', selection: 4000},
+  {file: 'gwords-07.txt', selection: 6000},
+  {file: 'gwords-08.txt', selection: 8400},
+  {file: 'gwords-09.txt', selection: 4000},
+  {file: 'gwords-10.txt', selection: 3600},
+  {file: 'gwords-11.txt', selection: 2400},
+  {file: 'gwords-12.txt', selection: 1200},
+  {file: 'gwords-13.txt', selection: 820},
+];
+
 export default {
   name: 'App',
   components: {
@@ -52,7 +69,7 @@ export default {
     // game setup
     size: 5,
     minSize: 1,
-    maxSize: 12,
+    maxSize: 13,
 
     // data loading
     wordlists: [],
@@ -177,7 +194,11 @@ export default {
       // we had an async break, check we're still working at the same game size
       if (size === this.size) {
         const list = this.wordlists[size];
-        this.word = list[Math.floor(Math.random() * list.length)];
+        const set = wordSets[size];
+        if (set.selection > list.length) {
+          console.warn('Set selection reported longer than length, hmmmmmm');
+        }
+        this.word = list[Math.floor(Math.random() * set.selection)];
       }
     },
     resetGame() {
@@ -196,9 +217,12 @@ export default {
       this.state = 'end';
     },
     async loadWordsforGame(size) {
-      const fileNumber = ('' + size).padStart(2, '0');
+      const set = wordSets[size];
+      if (!set) {
+        console.error('missing wordset for size', size);
+      }
       try {
-        const res = await fetch(`static/words-${fileNumber}.txt`);
+        const res = await fetch(`static/${set.file}`);
         const rawWords = await res.text();
         const words = rawWords.split('\n').filter(w => w.length === size);
         if (words.length === 0) {
