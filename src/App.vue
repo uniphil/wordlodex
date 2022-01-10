@@ -8,14 +8,21 @@
         {{ m.message }}
       </div>
     </div>
+    <div
+      v-if="showAbout"
+      class="about-sizer">
+      <About v-on:close="showAbout = false" />
+    </div>
     <div class="controls-sizer">
       <Controls
         :state="state"
         :size="size"
+        :rows="rows"
         :min-size="minSize"
         :max-size="maxSize"
         v-on:change-size="size += $event"
         v-on:reset="resetGame"
+        v-on:show-about="showAbout = true"
       />
     </div>
     <p v-if="loser">The word was <strong class="the-word">{{ word }}</strong>.</p>
@@ -31,7 +38,7 @@
         :nopes="nopes"
         v-on:letter-press="handleLetterPress"
         v-on:backspace-press="handleBackspacePress"
-        v-on:escape-press="endGame"
+        v-on:escape-press="handleEscapePress"
         v-on:enter-press="handleEnterPress"
       />
     </div>
@@ -39,6 +46,7 @@
 </template>
 
 <script>
+import About from './components/About';
 import Controls from './components/Controls';
 import Keyboard from './components/Keyboard';
 import Tiles from './components/Tiles';
@@ -63,6 +71,7 @@ const wordSets = [
 export default {
   name: 'App',
   components: {
+    About,
     Controls,
     Keyboard,
     Tiles,
@@ -78,6 +87,7 @@ export default {
 
     // general notifications
     messages: [],
+    showAbout: false,
 
     // game state
     state: 'welcome',
@@ -153,6 +163,13 @@ export default {
       this.entry = this.entry.slice(0, -1);
       if (this.entry === '' && this.guesses.length === 0) {
         this.resetGame();
+      }
+    },
+    handleEscapePress() {
+      if (this.showAbout) {
+        this.showAbout = false;
+      } else {
+        this.endGame();
       }
     },
     handleEnterPress() {
@@ -291,6 +308,10 @@ body {
   padding: 0.25em 0.5em;
   margin: 0.5em;
 }
+.about-sizer {
+  margin: 0.5em 1em;
+  position: absolute;
+}
 .controls-sizer {
   background: linear-gradient(hsla(200, 50%, 50%, 0.2), hsla(210, 50%, 50%, 0.1));
   flex-grow: 0;
@@ -344,6 +365,10 @@ button:disabled:active {
   --outline: hsla(0, 0%, 33%, 0.5);
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+a {
+  color: inherit;
 }
 
 </style>

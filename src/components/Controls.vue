@@ -1,6 +1,11 @@
 <template>
   <div class="controls">
     <h1>Wordlodex±</h1>
+    <a
+      href="#"
+      @click.prevent="$emit('show-about')">
+      About
+    </a>
     <div class="sizer">
       Game:
       <button
@@ -9,7 +14,7 @@
         :disabled="size <= minSize">
         -
       </button>
-      {{ size }}x{{ size }}
+      {{ size }}x{{ rows }}
       <button
         v-if="state === 'welcome'"
         @click.prevent="$emit('change-size', 1)"
@@ -32,6 +37,7 @@ export default {
   props: {
     'state': String,
     'size': Number,
+    'rows': Number,
     'minSize': Number,
     'maxSize': Number,
   },
@@ -42,6 +48,9 @@ export default {
 </script>
 
 <style scoped>
+.title {
+  display: flex;
+}
 .controls {
   align-items: baseline;
   display: flex;

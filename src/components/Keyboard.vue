@@ -48,8 +48,9 @@
       </button>
       <button
         class="key command"
-        @click.prevent="$emit('backspace-press')">
-        del
+        @click.prevent="$emit('backspace-press')"
+        title="backspace">
+        ⌫
       </button>
     </div>
   </div>
