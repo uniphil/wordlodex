@@ -57,11 +57,11 @@ import Tiles from './components/Tiles';
 
 const wordSets = [
   null, // nothing for length zero
-  {file: 'gwords-01.txt', selection: 3, guesses: 2},
+  {file: 'gwords-01.txt', selection: 3, guesses: 3},
   {file: 'gwords-02.txt', selection: 80, guesses: 5},
-  {file: 'gwords-03.txt', selection: 600, guesses: 5},
-  {file: 'gwords-04.txt', selection: 2222, guesses: 5},
-  {file: 'gwords-05.txt', selection: 3000, guesses: 5},
+  {file: 'gwords-03.txt', selection: 600, guesses: 6},
+  {file: 'gwords-04.txt', selection: 2222, guesses: 6},
+  {file: 'gwords-05.txt', selection: 3000, guesses: 6},
   {file: 'gwords-06.txt', selection: 4000, guesses: 6},
   {file: 'gwords-07.txt', selection: 6000, guesses: 7},
   {file: 'gwords-08.txt', selection: 8400, guesses: 8},
