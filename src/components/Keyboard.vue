@@ -77,6 +77,10 @@ export default {
         this.$emit('enter-press');
       } else if (k === 'escape') {
         this.$emit('escape-press');
+      } else if (k === '-') {
+        this.$emit('minus-press');
+      } else if (k === '+') {
+        this.$emit('plus-press');
       } else if (k === 'backspace') {
         this.$emit('backspace-press');
       } else if ('abcdefghijklmnopqrstuvwxyz'.includes(k)) {

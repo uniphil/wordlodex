@@ -7,20 +7,6 @@
       About
     </a>
     <div class="sizer">
-      Game:
-      <button
-        v-if="state === 'welcome'"
-        @click.prevent="$emit('change-size', -1)"
-        :disabled="size <= minSize">
-        -
-      </button>
-      {{ size }}x{{ rows }}
-      <button
-        v-if="state === 'welcome'"
-        @click.prevent="$emit('change-size', 1)"
-        :disabled="size >= maxSize">
-        +
-      </button>
       <button
         v-if="state !== 'welcome'"
         @click.prevent="$emit('reset')"

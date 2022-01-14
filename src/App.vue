@@ -1,58 +1,79 @@
 <template>
   <div id="app">
-    <div id="messages">
+    <div id="game">
+      <div id="messages">
+        <div
+          v-for="m in messages"
+          :key="m.k"
+          class="message">
+          {{ m.message }}
+        </div>
+      </div>
+      <div class="controls-sizer">
+        <Controls
+          :state="state"
+          :size="size"
+          :rows="rows"
+          :min-size="minSize"
+          :max-size="maxSize"
+          v-on:change-size="size += $event"
+          v-on:reset="resetGame"
+          v-on:show-about="modal = 'about'"
+        />
+      </div>
+      <p v-if="state === 'welcome'">
+        Difficulty:
+        <button
+          @click.prevent="changeSize(-1)"
+          :disabled="size <= minSize">
+          -
+        </button>
+        <strong>{{ size }}</strong> letters
+        <button
+          @click.prevent="changeSize(1)"
+          :disabled="size >= maxSize">
+          +
+        </button>
+      </p>
+      <p v-else-if="state === 'end'">
+        <span v-if="loser">The word was <strong class="the-word">{{ word }}</strong>.</span>
+        <span v-else>Nice work!</span>
+        <a href="#" @click.prevent="resetGame">Play another?</a>
+      </p>
       <div
-        v-for="m in messages"
-        :key="m.k"
-        class="message">
-        {{ m.message }}
+        class="tiles-sizer"
+        :style="{ aspectRatio: `${tiles[0].length} / ${tiles.length}` }">
+        <Tiles :tiles="tiles" />
+      </div>
+      <div class="keyboard-sizer">
+        <Keyboard
+          :losts="losts"
+          :founds="founds"
+          :nopes="nopes"
+          v-on:letter-press="handleLetterPress"
+          v-on:backspace-press="handleBackspacePress"
+          v-on:escape-press="handleEscapePress"
+          v-on:enter-press="handleEnterPress"
+          v-on:minus-press="changeSize(-1)"
+          v-on:plus-press="changeSize(1)"
+        />
       </div>
     </div>
-    <div
-      v-if="showAbout"
-      class="about-sizer">
-      <About v-on:close="showAbout = false" />
-    </div>
-    <div class="controls-sizer">
-      <Controls
-        :state="state"
-        :size="size"
-        :rows="rows"
-        :min-size="minSize"
-        :max-size="maxSize"
-        v-on:change-size="size += $event"
-        v-on:reset="resetGame"
-        v-on:show-about="showAbout = true"
-      />
-    </div>
-    <p v-if="state === 'end'">
-      <span v-if="loser">The word was <strong class="the-word">{{ word }}</strong>.</span>
-      <span v-else>Nice work!</span>
-      <a href="#" @click.prevent="resetGame">Play another?</a>
-    </p>
-    <div
-      class="tiles-sizer"
-      :style="{ aspectRatio: `${tiles[0].length} / ${tiles.length}` }">
-      <Tiles :tiles="tiles" />
-    </div>
-    <div class="keyboard-sizer">
-      <Keyboard
-        :losts="losts"
-        :founds="founds"
-        :nopes="nopes"
-        v-on:letter-press="handleLetterPress"
-        v-on:backspace-press="handleBackspacePress"
-        v-on:escape-press="handleEscapePress"
-        v-on:enter-press="handleEnterPress"
-      />
-    </div>
+    <Modal
+      v-if="modal"
+      v-on:close="modal = null">
+      <About v-if="modal === 'about'" />
+      <Hello v-if="modal === 'hello'" />
+    </Modal>
   </div>
 </template>
 
 <script>
 import About from './components/About';
 import Controls from './components/Controls';
+import Hello from './components/Hello';
 import Keyboard from './components/Keyboard';
+import Modal from './components/Modal';
 import Tiles from './components/Tiles';
 
 const wordSets = [
@@ -77,7 +98,9 @@ export default {
   components: {
     About,
     Controls,
+    Hello,
     Keyboard,
+    Modal,
     Tiles,
   },
   data: () => ({
@@ -91,7 +114,7 @@ export default {
 
     // general notifications
     messages: [],
-    showAbout: false,
+    modal: null,
 
     // game state
     state: 'welcome',
@@ -152,6 +175,12 @@ export default {
       }
     },
   },
+  mounted() {
+    if (!localStorage.getItem('beenHereBefore')) {
+      this.modal = 'hello';
+      localStorage.setItem('beenHereBefore', true);
+    }
+  },
   methods: {
     handleLetterPress(key) {
       if (this.state === 'welcome') {
@@ -170,8 +199,8 @@ export default {
       }
     },
     handleEscapePress() {
-      if (this.showAbout) {
-        this.showAbout = false;
+      if (this.modal) {
+        this.modal = null;
       } else {
         this.endGame();
       }
@@ -195,6 +224,12 @@ export default {
         }
         this.entry = '';
       }
+    },
+    changeSize(changeBy) {
+      if (this.state !== 'welcome') {
+        return;
+      }
+      this.size = Math.max(this.minSize, Math.min(this.maxSize, this.size + changeBy));
     },
     notify(message) {
       this.messages.unshift({ message, k: '' + Math.random() });
@@ -285,15 +320,18 @@ html, body {
 body {
   background: var(--bg);
   color: var(--fg);
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
 }
 
 #app {
+  height: 100%;
+}
+#game {
   align-items: center;
   background: #222;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
   height: 100%;
   justify-content: space-between;
   max-width: 480px;
@@ -311,10 +349,6 @@ body {
   border-radius: 0.5em;
   padding: 0.25em 0.5em;
   margin: 0.5em;
-}
-.about-sizer {
-  margin: 0.5em 1em;
-  position: absolute;
 }
 .controls-sizer {
   background: linear-gradient(hsla(200, 50%, 50%, 0.2), hsla(210, 50%, 50%, 0.1));
