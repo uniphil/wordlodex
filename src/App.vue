@@ -12,11 +12,6 @@
       <div class="controls-sizer">
         <Controls
           :state="state"
-          :size="size"
-          :rows="rows"
-          :min-size="minSize"
-          :max-size="maxSize"
-          v-on:change-size="size += $event"
           v-on:reset="resetGame"
           v-on:show-about="modal = 'about'"
         />
@@ -38,7 +33,9 @@
       <p v-else-if="state === 'end'">
         <span v-if="loser">The word was <strong class="the-word">{{ word }}</strong>.</span>
         <span v-else>Nice work!</span>
-        <a href="#" @click.prevent="resetGame">Play another?</a>
+        <span v-if="size > 1">
+          <br/>Next game tomorrow.
+        </span>
       </p>
       <div
         class="tiles-sizer"
@@ -121,6 +118,7 @@ export default {
     word: null,
     entry: '',
     guesses: [],
+    sizesPlayed: [],
   }),
   computed: {
     rows() {
@@ -202,7 +200,7 @@ export default {
       if (this.modal) {
         this.modal = null;
       } else {
-        this.endGame();
+        // this.endGame();
       }
     },
     handleEnterPress() {
@@ -223,13 +221,22 @@ export default {
           this.endGame(false);
         }
         this.entry = '';
+        this.sizesPlayed[this.size] = {
+          word: this.word,
+          guesses: [...this.guesses],
+        };
       }
     },
     changeSize(changeBy) {
       if (this.state !== 'welcome') {
         return;
       }
-      this.size = Math.max(this.minSize, Math.min(this.maxSize, this.size + changeBy));
+      const nextSize = this.size + changeBy;
+      if (nextSize < this.minSize || nextSize > this.maxSize) {
+        return;
+      }
+      this.size = nextSize;
+      this.resetGame();
     },
     notify(message) {
       this.messages.unshift({ message, k: '' + Math.random() });
@@ -259,14 +266,23 @@ export default {
         if (set.selection > list.length) {
           console.warn('Set selection reported longer than length, hmmmmmm');
         }
-        this.word = list[Math.floor(Math.random() * set.selection)];
+        if (this.size === 1) {
+          this.word = list[Math.floor(Math.random() * set.selection)];
+        } else {
+          this.word = list[Math.floor(+new Date() / 86400000 - 52 * 365.25)];
+        }
       }
     },
     resetGame() {
       this.state = 'welcome';
-      this.word = null;
       this.entry = '';
-      this.guesses = [];
+      if (this.sizesPlayed[this.size]) {
+        this.word = this.sizesPlayed[this.size].word;
+        this.guesses = this.sizesPlayed[this.size].guesses;
+      } else {
+        this.word = null;
+        this.guesses = [];
+      }
     },
     endGame(winner) {
       if (this.state !== 'playing') {
